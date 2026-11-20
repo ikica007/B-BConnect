@@ -1,0 +1,6 @@
+{
+  "name": "B&B CONNECT AMAR",
+  "description": "B&B Connect Amar - Telekommunikation und Glasfaser",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
