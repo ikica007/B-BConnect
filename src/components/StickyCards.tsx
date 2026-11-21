@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useRef } from "react";
 
 import { cn } from "../lib/utils";
+import { useLanguage } from "../context/LanguageContext";
 
 interface CardData {
   id: number | string;
@@ -102,6 +103,8 @@ const StickyCard002 = ({
     { scope: container },
   );
 
+  const { t } = useLanguage();
+
   return (
     <div className={cn("relative h-full w-full bg-transparent py-24", className)} ref={container}>
       <div className="sticky-cards relative flex h-[100vh] w-full items-center justify-center overflow-hidden p-3 lg:p-8">
@@ -126,8 +129,8 @@ const StickyCard002 = ({
                 <img src={card.image} alt={card.alt} className="w-full h-full object-cover" />
               ) : (
                 <div className="text-center p-8">
-                  <p className="text-xl font-light mb-2">Prazan prostor za sliku</p>
-                  <p className="text-sm opacity-50">Card {i + 1}</p>
+                  <p className="text-xl font-light mb-2">{t.stickyCards.emptyText}</p>
+                  <p className="text-sm opacity-50">{t.stickyCards.cardLabel} {i + 1}</p>
                 </div>
               )}
             </div>
