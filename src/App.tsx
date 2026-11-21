@@ -9,6 +9,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LiveBackground } from './components/LiveBackground';
 import { LanguageProvider } from './context/LanguageContext';
+import { IntroFiber } from './components/IntroFiber';
 
 import { HomePage } from './pages/HomePage';
 import { LeistungenPage } from './pages/LeistungenPage';
@@ -33,6 +34,7 @@ export default function App() {
     <LanguageProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <IntroFiber />
         <div className="min-h-screen text-offwhite font-sans selection:bg-electric selection:text-navy-900 relative">
           <LiveBackground />
           <div className="relative z-10 flex flex-col min-h-screen justify-between">
