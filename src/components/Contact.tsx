@@ -1,13 +1,44 @@
 import { useState, FormEvent } from 'react';
 import { TextRoll } from './TextRoll';
-import { MapPin, Mail, Phone, Send, Clock, CheckCircle2 } from 'lucide-react';
+import { MapPin, Mail, Phone, Send, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { sendInquiryEmail, buildMailtoUrl, InquiryPayload } from '../lib/sendInquiry';
 
 export function Contact() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMailto, setErrorMailto] = useState<string | null>(null);
+  const { t } = useLanguage();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+    setErrorMailto(null);
+
+    const payload: InquiryPayload = {
+      formSource: 'Početna stranica — Kontakt forma',
+      subject: subject.trim() || `Projektanfrage von ${name}`,
+      name: name.trim(),
+      email: email.trim(),
+      message: message.trim(),
+    };
+
+    try {
+      await sendInquiryEmail(payload);
+      setSubmitted(true);
+      setName('');
+      setEmail('');
+      setSubject('');
+      setMessage('');
+    } catch {
+      setErrorMailto(buildMailtoUrl(payload));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -16,23 +47,23 @@ export function Contact() {
         
         <div className="flex flex-col items-center text-center mb-16">
           <span className="text-electric text-xs font-bold tracking-[0.25em] mb-2 uppercase bg-electric/10 border border-electric/20 px-4 py-1.5 rounded-full">
-            KONTAKT & ANFRAGE
+            {t.contactSection.badge}
           </span>
           <h2 className="text-4xl md:text-6xl font-extrabold text-offwhite uppercase tracking-tight">
-            <TextRoll center>Nehmen Sie</TextRoll>{' '}
-            <span className="text-electric"><TextRoll center>Kontakt auf</TextRoll></span>
+            <TextRoll center>{t.contactSection.headingLine1}</TextRoll>{' '}
+            <span className="text-electric"><TextRoll center>{t.contactSection.headingLine2}</TextRoll></span>
           </h2>
           <p className="text-coolgray text-base md:text-lg max-w-2xl mt-4 font-light">
-            Wir freuen uns auf Ihre Projektanfrage. Schreiben Sie uns eine Nachricht oder rufen Sie uns direkt an.
+            {t.contactSection.subtitle}
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-12 items-start mb-20">
+        <div className="grid lg:grid-cols-12 gap-12 items-start mb-16 md:mb-20">
           
           {/* Contact Information & Details */}
           <div className="lg:col-span-5 bg-navy-800/90 border border-navy-700 p-8 md:p-10 rounded-3xl shadow-xl backdrop-blur-xl">
             <h3 className="text-2xl font-bold text-offwhite mb-6">
-              B&B Connect UG
+              {t.contactSection.companyName}
             </h3>
             
             <div className="space-y-6 text-coolgray font-light">
@@ -41,9 +72,9 @@ export function Contact() {
                   <MapPin size={22} />
                 </div>
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Adresse</h4>
+                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactSection.addressLabel}</h4>
                   <p className="text-offwhite font-medium">Otto-Hahn-Str. 27</p>
-                  <p className="text-sm">32108 Bad Salzuflen, Deutschland</p>
+                  <p className="text-sm">{t.contactSection.addressLine2}</p>
                 </div>
               </div>
 
@@ -52,11 +83,11 @@ export function Contact() {
                   <Mail size={22} />
                 </div>
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">E-Mail</h4>
+                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactSection.emailLabel}</h4>
                   <a href="mailto:info@bundbconnect.de" className="text-offwhite font-medium hover:text-electric transition-colors">
                     info@bundbconnect.de
                   </a>
-                  <p className="text-xs text-coolgray mt-0.5">Schnelle Antwort garantiert</p>
+                  <p className="text-xs text-coolgray mt-0.5">{t.contactSection.emailNote}</p>
                 </div>
               </div>
 
@@ -65,11 +96,11 @@ export function Contact() {
                   <Phone size={22} />
                 </div>
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Telefon</h4>
-                  <a href="tel:+4952229809900" className="text-offwhite font-medium hover:text-electric transition-colors">
-                    +49 (0) 5222 / 980 99 00
+                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactSection.phoneLabel}</h4>
+                  <a href="tel:+491608170468" className="text-offwhite font-medium hover:text-electric transition-colors">
+                    +49 160 817 0468
                   </a>
-                  <p className="text-xs text-coolgray mt-0.5">Mo. - Fr. 08:00 - 18:00 Uhr</p>
+                  <p className="text-xs text-coolgray mt-0.5">{t.contactSection.phoneHours}</p>
                 </div>
               </div>
 
@@ -78,9 +109,9 @@ export function Contact() {
                   <Clock size={22} />
                 </div>
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Einsatzgebiet</h4>
-                  <p className="text-offwhite font-medium">Bundesweit (Ganz Deutschland)</p>
-                  <p className="text-xs text-coolgray mt-0.5">&gt; 20 hochqualifizierte Fachkräfte vor Ort</p>
+                  <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactSection.areaLabel}</h4>
+                  <p className="text-offwhite font-medium">{t.contactSection.areaValue}</p>
+                  <p className="text-xs text-coolgray mt-0.5">{t.contactSection.areaNote}</p>
                 </div>
               </div>
             </div>
@@ -93,65 +124,91 @@ export function Contact() {
                 <div className="w-20 h-20 bg-electric/20 border border-electric text-electric rounded-full flex items-center justify-center text-4xl mb-6 shadow-[0_0_25px_rgba(0,163,255,0.4)]">
                   <CheckCircle2 size={40} />
                 </div>
-                <h3 className="text-3xl font-bold text-offwhite mb-3">Vielen Dank!</h3>
+                <h3 className="text-3xl font-bold text-offwhite mb-3">{t.contactSection.successTitle}</h3>
                 <p className="text-coolgray text-base max-w-md">
-                  Ihre Nachricht wurde erfolgreich an <strong className="text-electric">info@bundbconnect.de</strong> übermittelt. Wir setzen uns umgehend mit Ihnen in Verbindung.
+                  {t.contactSection.successMsgStart} <strong className="text-electric">info@bundbconnect.de</strong> {t.contactSection.successMsgEnd}
                 </p>
                 <button 
+                  type="button"
                   onClick={() => setSubmitted(false)}
-                  className="mt-8 text-xs font-bold text-electric hover:underline uppercase tracking-wider bg-navy-900 border border-electric/30 px-6 py-3 rounded-full"
+                  className="mt-8 text-xs font-bold text-electric hover:underline uppercase tracking-wider bg-navy-900 border border-electric/30 px-6 py-3 rounded-full cursor-pointer"
                 >
-                  Neue Nachricht senden
+                  {t.contactSection.sendAnother}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <h3 className="text-2xl font-bold text-offwhite mb-2">Nachricht senden</h3>
+                <h3 className="text-2xl font-bold text-offwhite mb-2">{t.contactSection.formTitle}</h3>
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Vor- & Nachname</label>
+                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactSection.labelName}</label>
                     <input 
                       type="text" 
                       required
-                      placeholder="z. B. Max Mustermann" 
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder={t.contactSection.placeholderName} 
                       className="w-full bg-navy-900/90 border border-navy-700 text-offwhite px-5 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">E-Mail Adresse</label>
+                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactSection.labelEmail}</label>
                     <input 
                       type="email" 
                       required
-                      placeholder="ihre.mail@firma.de" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t.contactSection.placeholderEmail} 
                       className="w-full bg-navy-900/90 border border-navy-700 text-offwhite px-5 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Telefonnummer / Betreff</label>
+                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactSection.labelSubject}</label>
                   <input 
                     type="text" 
-                    placeholder="Anfrage zu Glasfaser-, Tiefbau- oder Spleißarbeiten" 
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder={t.contactSection.placeholderSubject} 
                     className="w-full bg-navy-900/90 border border-navy-700 text-offwhite px-5 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Ihre Nachricht</label>
+                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactSection.labelMessage}</label>
                   <textarea 
                     required
-                    placeholder="Beschreiben Sie kurz Ihr Vorhaben oder Ihre Anforderung..." 
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={t.contactSection.placeholderMessage} 
                     rows={5}
                     className="w-full bg-navy-900/90 border border-navy-700 text-offwhite px-5 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors resize-none"
                   ></textarea>
                 </div>
 
+                {errorMailto && (
+                  <div className="p-4 rounded-xl bg-navy-900 border border-electric/40 text-xs text-coolgray space-y-2">
+                    <div className="flex items-start gap-2 text-offwhite">
+                      <AlertCircle size={16} className="text-electric shrink-0 mt-0.5" />
+                      <span>{t.contactSection.sendError}</span>
+                    </div>
+                    <a
+                      href={errorMailto}
+                      className="inline-flex items-center gap-2 text-electric font-bold underline"
+                    >
+                      <Mail size={14} />
+                      <span>{t.contactSection.openEmailApp}</span>
+                    </a>
+                  </div>
+                )}
+
                 <button 
                   type="submit" 
-                  className="bg-electric text-navy-900 font-bold tracking-widest text-xs px-10 py-5 rounded-full hover:bg-electric-dim hover:text-offwhite transition-colors self-start mt-2 uppercase cursor-pointer flex items-center gap-3 shadow-[0_0_20px_rgba(0,163,255,0.3)]"
+                  disabled={isSubmitting}
+                  className="bg-electric text-navy-900 font-bold tracking-widest text-xs px-10 py-5 rounded-full hover:bg-electric-dim hover:text-offwhite transition-colors self-start mt-2 uppercase cursor-pointer flex items-center gap-3 shadow-[0_0_20px_rgba(0,163,255,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <span>NACHRICHT SENDEN</span>
+                  <span>{isSubmitting ? t.contactSection.sendingBtn : t.contactSection.submitBtn}</span>
                   <Send size={16} />
                 </button>
               </form>
@@ -160,34 +217,38 @@ export function Contact() {
         </div>
 
         {/* Google Maps Embed Section */}
-        <div className="mt-12">
-          <div className="flex flex-col md:flex-row items-center justify-between mb-6">
+        <div className="bg-navy-800/80 border border-navy-700 p-6 md:p-8 rounded-3xl shadow-2xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div>
-              <span className="text-electric text-xs font-bold uppercase tracking-widest">Unternehmensstandort</span>
-              <h3 className="text-2xl font-bold text-offwhite mt-1">Otto-Hahn-Str. 27, 32108 Bad Salzuflen</h3>
+              <span className="text-electric text-xs font-bold uppercase tracking-widest block mb-1">
+                {t.contactSection.locationLabel}
+              </span>
+              <h3 className="text-xl md:text-2xl font-bold text-offwhite">
+                Otto-Hahn-Str. 27, 32108 Bad Salzuflen
+              </h3>
             </div>
-            <a 
-              href="https://maps.google.com/?q=Otto-Hahn-Str.+27,+32108+Bad+Salzuflen,+Germany" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="mt-4 md:mt-0 text-xs font-bold text-electric hover:underline uppercase tracking-wider flex items-center gap-2"
+            <a
+              href="https://maps.google.com/?q=Otto-Hahn-Str.+27,+32108+Bad+Salzuflen,+Germany"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-navy-900 border border-electric/40 text-electric text-xs font-bold px-5 py-2.5 rounded-full uppercase tracking-wider hover:bg-electric hover:text-navy-900 transition-all flex items-center gap-2 shrink-0"
             >
-              <span>Auf Google Maps öffnen</span>
+              <span>{t.contactSection.openMaps}</span>
               <MapPin size={16} />
             </a>
           </div>
 
-          <div className="w-full h-80 md:h-96 rounded-3xl overflow-hidden border border-navy-700 shadow-2xl relative bg-navy-950">
-            <iframe 
-              src="https://maps.google.com/maps?q=Otto-Hahn-Str.+27,+32108+Bad+Salzuflen,+Germany&t=&z=15&ie=UTF8&iwloc=&output=embed" 
-              width="100%" 
-              height="100%" 
-              frameBorder="0" 
-              style={{ border: 0 }} 
-              allowFullScreen 
-              aria-hidden="false" 
-              tabIndex={0}
-              className="w-full h-full grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+          <div className="w-full h-[380px] md:h-[440px] rounded-2xl overflow-hidden border border-navy-700 bg-navy-950">
+            <iframe
+              title="B&B Connect UG Standort - Otto-Hahn-Str. 27, 32108 Bad Salzuflen"
+              src="https://maps.google.com/maps?q=Otto-Hahn-Str.+27,+32108+Bad+Salzuflen,+Germany&t=&z=15&ie=UTF8&iwloc=&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="w-full h-full"
             />
           </div>
         </div>
@@ -196,4 +257,3 @@ export function Contact() {
     </section>
   );
 }
-
