@@ -33,7 +33,7 @@ export function CaseStudy() {
 
         {/* Partners Showcase Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto mb-20">
-          {t.cooperationSection.partners.map((partner, idx) => {
+          {[...t.cooperationSection.partners].sort((a, b) => Number(b.name === 'FSD') - Number(a.name === 'FSD')).map((partner, idx) => {
             const IconComp = icons[idx % icons.length] || Building2;
             return (
               <a
