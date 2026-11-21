@@ -1,17 +1,79 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Mail, Phone, Send, Clock, CheckCircle2, Building2, User, Globe } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, MapPin, Mail, Phone, Send, Clock, CheckCircle2, User, Globe, X, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { sendInquiryEmail, buildMailtoUrl, InquiryPayload } from '../lib/sendInquiry';
 
 export function KontaktPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialService = searchParams.get('service') || '';
+  const initialCategory = searchParams.get('category') || '';
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [subject, setSubject] = useState(
+    initialService ? `${initialService}` : '',
+  );
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMailto, setErrorMailto] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    if (initialService) {
+      setSubject(`${t.contactPage.inquiryPrefix} ${initialService}`);
+      setSubmitted(false);
+      const formEl = document.getElementById('kontakt-form');
+      if (formEl) {
+        setTimeout(() => {
+          formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      }
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [initialService, t.contactPage.inquiryPrefix]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const clearSelectedService = () => {
+    searchParams.delete('service');
+    searchParams.delete('category');
+    setSearchParams(searchParams, { replace: true });
+    setSubject('');
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+    setErrorMailto(null);
+
+    const payload: InquiryPayload = {
+      formSource: 'Kontakt stranica (/kontakt)',
+      subject: subject.trim() || `Kontaktanfrage von ${name}`,
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim() || undefined,
+      service: initialService
+        ? initialCategory && initialCategory !== initialService
+          ? `${initialCategory} · ${initialService}`
+          : initialService
+        : undefined,
+      message: message.trim(),
+    };
+
+    try {
+      await sendInquiryEmail(payload);
+      setSubmitted(true);
+      setName('');
+      setEmail('');
+      setPhone('');
+      setMessage('');
+    } catch {
+      setErrorMailto(buildMailtoUrl(payload));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -25,11 +87,11 @@ export function KontaktPage() {
             className="inline-flex items-center gap-2 text-electric font-bold tracking-widest text-xs uppercase bg-navy-800/90 border border-electric/30 px-5 py-2.5 rounded-full hover:bg-electric hover:text-navy-900 transition-all shadow-[0_0_15px_rgba(0,163,255,0.2)]"
           >
             <ArrowLeft size={18} />
-            <span>Zurück zur Startseite</span>
+            <span>{t.nav.backHome}</span>
           </Link>
 
           <span className="text-xs uppercase tracking-widest text-coolgray hidden sm:inline-block font-mono">
-            B&B CONNECT UG &bull; KONTAKT & ANFAHRT
+            {t.contactPage.topTag}
           </span>
         </div>
 
@@ -39,13 +101,13 @@ export function KontaktPage() {
           
           <div className="max-w-3xl relative z-10">
             <span className="text-electric text-xs font-bold tracking-[0.25em] mb-4 uppercase bg-electric/10 border border-electric/20 px-4 py-2 rounded-full inline-block">
-              KONTAKT & STANDORT
+              {t.contactPage.heroBadge}
             </span>
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-offwhite uppercase tracking-tight mt-4 leading-tight">
-              Sprechen Sie mit <span className="text-electric">B&B Connect</span>
+              {t.contactPage.heroTitlePre} <span className="text-electric">{t.contactPage.heroTitleHighlight}</span>
             </h1>
             <p className="text-coolgray text-base md:text-xl font-light mt-6 leading-relaxed">
-              Ob Projektanfrage, Partnerschaftsangebot oder technische Auskunft – unser Team steht Ihnen jederzeit gerne zur Verfügung.
+              {t.contactPage.heroSubtitle}
             </p>
           </div>
         </div>
@@ -55,7 +117,7 @@ export function KontaktPage() {
           {/* Left: Contact Information Cards */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-navy-800/90 border border-navy-700 p-8 rounded-3xl shadow-xl backdrop-blur-xl">
-              <span className="text-xs font-bold uppercase tracking-widest text-electric block mb-2">Unternehmensdaten</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-electric block mb-2">{t.contactPage.companyBadge}</span>
               <h2 className="text-2xl font-bold text-offwhite mb-6">B&B Connect UG</h2>
 
               <div className="space-y-6 text-coolgray font-light">
@@ -64,9 +126,9 @@ export function KontaktPage() {
                     <MapPin size={22} />
                   </div>
                   <div>
-                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Standort & Adresse</h3>
+                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactPage.addressTitle}</h3>
                     <p className="text-offwhite font-medium text-base">Otto-Hahn-Str. 27</p>
-                    <p className="text-sm">32108 Bad Salzuflen, Deutschland</p>
+                    <p className="text-sm">{t.contactPage.addressCountry}</p>
                   </div>
                 </div>
 
@@ -75,7 +137,7 @@ export function KontaktPage() {
                     <Mail size={22} />
                   </div>
                   <div>
-                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Offizielle E-Mail</h3>
+                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactPage.emailTitle}</h3>
                     <a href="mailto:info@bundbconnect.de" className="text-offwhite font-medium text-base hover:text-electric transition-colors">
                       info@bundbconnect.de
                     </a>
@@ -87,9 +149,9 @@ export function KontaktPage() {
                     <Phone size={22} />
                   </div>
                   <div>
-                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Telefonkontakt</h3>
-                    <a href="tel:+4952229809900" className="text-offwhite font-medium text-base hover:text-electric transition-colors">
-                      +49 (0) 5222 / 980 99 00
+                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactPage.phoneTitle}</h3>
+                    <a href="tel:+491608170468" className="text-offwhite font-medium text-base hover:text-electric transition-colors">
+                      +49 160 817 0468
                     </a>
                   </div>
                 </div>
@@ -99,7 +161,7 @@ export function KontaktPage() {
                     <User size={22} />
                   </div>
                   <div>
-                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Geschäftsführung</h3>
+                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactPage.managementTitle}</h3>
                     <p className="text-offwhite font-medium">Amar Bektašević</p>
                   </div>
                 </div>
@@ -109,9 +171,9 @@ export function KontaktPage() {
                     <Globe size={22} />
                   </div>
                   <div>
-                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">Einsatzgebiet</h3>
-                    <p className="text-offwhite font-medium">Alle Städte in ganz Deutschland</p>
-                    <p className="text-xs text-coolgray mt-0.5">&gt; 20 Fachkräfte vor Ort</p>
+                    <h3 className="text-xs uppercase tracking-widest text-electric font-bold mb-1">{t.contactPage.areaTitle}</h3>
+                    <p className="text-offwhite font-medium">{t.contactPage.areaValue}</p>
+                    <p className="text-xs text-coolgray mt-0.5">{t.contactPage.areaSub}</p>
                   </div>
                 </div>
               </div>
@@ -120,53 +182,79 @@ export function KontaktPage() {
             <div className="bg-navy-800/60 border border-navy-700 p-6 rounded-2xl flex items-center gap-4">
               <Clock className="text-electric shrink-0" size={28} />
               <div>
-                <h4 className="text-sm font-bold text-offwhite">Bürozeiten</h4>
-                <p className="text-xs text-coolgray">Montag &ndash; Freitag: 08:00 &ndash; 18:00 Uhr</p>
+                <h4 className="text-sm font-bold text-offwhite">{t.contactPage.hoursTitle}</h4>
+                <p className="text-xs text-coolgray">{t.contactPage.hoursValue}</p>
               </div>
             </div>
           </div>
 
           {/* Right: Contact Form */}
-          <div className="lg:col-span-7 bg-navy-800/80 border border-navy-700 p-8 md:p-12 rounded-3xl shadow-xl backdrop-blur-xl">
+          <div id="kontakt-form" className="lg:col-span-7 bg-navy-800/80 border border-navy-700 p-8 md:p-12 rounded-3xl shadow-xl backdrop-blur-xl scroll-mt-32">
             {submitted ? (
               <div className="text-center py-16 flex flex-col items-center justify-center">
                 <div className="w-20 h-20 bg-electric/20 border border-electric text-electric rounded-full flex items-center justify-center text-4xl mb-6 shadow-[0_0_25px_rgba(0,163,255,0.4)]">
                   <CheckCircle2 size={40} />
                 </div>
-                <h3 className="text-3xl font-extrabold text-offwhite mb-3">Vielen Dank!</h3>
+                <h3 className="text-3xl font-extrabold text-offwhite mb-3">{t.contactPage.successTitle}</h3>
                 <p className="text-coolgray text-base max-w-md font-light leading-relaxed">
-                  Ihre Nachricht wurde erfolgreich an <strong className="text-electric">info@bundbconnect.de</strong> übermittelt. Wir melden uns innerhalb von 24 Stunden bei Ihnen.
+                  {t.contactPage.successMsgStart} <strong className="text-electric">info@bundbconnect.de</strong> {t.contactPage.successMsgEnd}
                 </p>
                 <button 
+                  type="button"
                   onClick={() => setSubmitted(false)}
-                  className="mt-8 text-xs font-bold text-electric hover:underline uppercase tracking-wider bg-navy-900 border border-electric/30 px-6 py-3 rounded-full"
+                  className="mt-8 text-xs font-bold text-electric hover:underline uppercase tracking-wider bg-navy-900 border border-electric/30 px-6 py-3 rounded-full cursor-pointer"
                 >
-                  Neue Nachricht schreiben
+                  {t.contactPage.sendAnother}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-electric block mb-1">SCHNELLE ANFRAGE</span>
-                  <h3 className="text-2xl font-extrabold text-offwhite uppercase">Schreiben Sie uns direkt</h3>
+                  <span className="text-xs font-bold uppercase tracking-widest text-electric block mb-1">{t.contactPage.formBadge}</span>
+                  <h3 className="text-2xl font-extrabold text-offwhite uppercase">{t.contactPage.formHeading}</h3>
                 </div>
+
+                {initialService && (
+                  <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-electric/10 border border-electric/30">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-electric block">
+                        {t.contactPage.selectedServiceLabel}
+                      </span>
+                      <p className="text-sm font-semibold text-offwhite">
+                        {initialCategory && initialCategory !== initialService ? `${initialCategory} · ${initialService}` : initialService}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearSelectedService}
+                      aria-label="Clear selected service"
+                      className="text-coolgray hover:text-offwhite transition-colors p-1 cursor-pointer"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
 
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Vor- & Nachname</label>
+                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactPage.labelName}</label>
                     <input 
                       type="text" 
                       required
-                      placeholder="z. B. Max Mustermann" 
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder={t.contactPage.placeholderName} 
                       className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">E-Mail Adresse</label>
+                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactPage.labelEmail}</label>
                     <input 
                       type="email" 
                       required
-                      placeholder="ihre.mail@firma.de" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t.contactPage.placeholderEmail} 
                       className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors"
                     />
                   </div>
@@ -174,38 +262,61 @@ export function KontaktPage() {
 
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Telefonnummer</label>
+                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactPage.labelPhone}</label>
                     <input 
                       type="tel" 
-                      placeholder="+49 123 456789" 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder={t.contactPage.placeholderPhone} 
                       className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Betreff</label>
+                    <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactPage.labelSubject}</label>
                     <input 
                       type="text" 
-                      placeholder="Anfrage, Glasfaser, Tiefbau..." 
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder={t.contactPage.placeholderSubject} 
                       className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Ihre Nachricht</label>
+                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.contactPage.labelMessage}</label>
                   <textarea 
                     required
-                    placeholder="Beschreiben Sie Ihr Anliegen, Projekt oder Ihre Fragen..." 
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={t.contactPage.placeholderMessage} 
                     rows={5}
                     className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3.5 rounded-xl focus:outline-none focus:border-electric transition-colors resize-none"
                   ></textarea>
                 </div>
 
+                {errorMailto && (
+                  <div className="p-4 rounded-xl bg-navy-900 border border-electric/40 text-xs text-coolgray space-y-2">
+                    <div className="flex items-start gap-2 text-offwhite">
+                      <AlertCircle size={16} className="text-electric shrink-0 mt-0.5" />
+                      <span>{t.contactPage.sendError}</span>
+                    </div>
+                    <a
+                      href={errorMailto}
+                      className="inline-flex items-center gap-2 text-electric font-bold underline"
+                    >
+                      <Mail size={14} />
+                      <span>{t.contactPage.openEmailApp}</span>
+                    </a>
+                  </div>
+                )}
+
                 <button 
                   type="submit" 
-                  className="bg-electric text-navy-900 font-bold tracking-widest text-xs px-10 py-5 rounded-full hover:bg-electric-dim hover:text-offwhite transition-colors uppercase cursor-pointer flex items-center justify-center gap-3 w-full sm:w-auto shadow-[0_0_20px_rgba(0,163,255,0.3)]"
+                  disabled={isSubmitting}
+                  className="bg-electric text-navy-900 font-bold tracking-widest text-xs px-10 py-5 rounded-full hover:bg-electric-dim hover:text-offwhite transition-colors uppercase cursor-pointer flex items-center justify-center gap-3 w-full sm:w-auto shadow-[0_0_20px_rgba(0,163,255,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <span>NACHRICHT JETZT SENDEN</span>
+                  <span>{isSubmitting ? t.contactPage.sendingBtn : t.contactPage.submitBtn}</span>
                   <Send size={16} />
                 </button>
               </form>
@@ -218,7 +329,7 @@ export function KontaktPage() {
         <div className="bg-navy-800/80 border border-navy-700 p-8 rounded-3xl shadow-2xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div>
-              <span className="text-electric text-xs font-bold uppercase tracking-widest">GOOGLE MAPS NAVI</span>
+              <span className="text-electric text-xs font-bold uppercase tracking-widest">{t.contactPage.mapBadge}</span>
               <h3 className="text-2xl font-bold text-offwhite">Otto-Hahn-Str. 27, 32108 Bad Salzuflen</h3>
             </div>
             <a 
@@ -227,13 +338,14 @@ export function KontaktPage() {
               rel="noopener noreferrer" 
               className="bg-navy-900 border border-electric/40 text-electric text-xs font-bold px-5 py-2.5 rounded-full uppercase tracking-wider hover:bg-electric hover:text-navy-900 transition-all flex items-center gap-2"
             >
-              <span>Auf Google Maps öffnen</span>
+              <span>{t.contactPage.openMaps}</span>
               <MapPin size={16} />
             </a>
           </div>
 
-          <div className="w-full h-96 rounded-2xl overflow-hidden border border-navy-700 bg-navy-950">
+          <div className="w-full h-[460px] md:h-[540px] rounded-2xl overflow-hidden border border-navy-700 bg-navy-950">
             <iframe 
+              title="B&B Connect UG Standort - Otto-Hahn-Str. 27, 32108 Bad Salzuflen"
               src="https://maps.google.com/maps?q=Otto-Hahn-Str.+27,+32108+Bad+Salzuflen,+Germany&t=&z=15&ie=UTF8&iwloc=&output=embed" 
               width="100%" 
               height="100%" 
@@ -242,7 +354,7 @@ export function KontaktPage() {
               allowFullScreen 
               aria-hidden="false" 
               tabIndex={0}
-              className="w-full h-full grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+              className="w-full h-full"
             />
           </div>
         </div>

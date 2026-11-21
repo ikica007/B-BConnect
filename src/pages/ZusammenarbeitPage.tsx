@@ -1,28 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Handshake, Building2, ShieldCheck, MapPin, Users, Calendar, Award, CheckCircle, Send, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, MapPin, Users, Calendar, Award, CheckCircle, Send, CheckCircle2, Building2, ExternalLink, AlertCircle, Mail } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { sendInquiryEmail, buildMailtoUrl, InquiryPayload } from '../lib/sendInquiry';
 
 export function ZusammenarbeitPage() {
+  const [company, setCompany] = useState('');
+  const [email, setEmail] = useState('');
+  const [field, setField] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errorMailto, setErrorMailto] = useState<string | null>(null);
+  const { t } = useLanguage();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const partnerList = [
-    {
-      name: "Libra GmbH",
-      role: "Strategischer Partner für Tiefbau & Trassentrassierung",
-      desc: "Langfristige und erfolgreiche Zusammenarbeit in Großprojekten im Bereich Tiefbau, Kabelzug und Trassenverlegung in Deutschland. Gemeinsam realisieren wir kilometerlange Glasfaserabschnitte fristgerecht und in höchster Güte.",
-      tags: ["Tiefbau", "Kabelzug", "Großprojekte"],
-      image: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=1000&auto=format&fit=crop"
-    },
-    {
-      name: "L-Tec GmbH",
-      role: "Spezialpartner für Lichtwellenleiter- & Netztechnik",
-      desc: "Engineered Cooperation für komplexe Spleißarbeiten, OTDR-Dämpfungsmessungen und PoP-Knotenpunkt-Anbindungen. Vertrauensvolle Synergie zur Beschleunigung des Breitbandausbaus.",
-      tags: ["Spleißtechnik", "OTDR-Messung", "PoP / Verteiler"],
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop"
+  const benefitIcons = [ShieldCheck, Users, Award];
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMailto(null);
+
+    const payload: InquiryPayload = {
+      formSource: 'Stranica saradnje i partnera (/zusammenarbeit)',
+      subject: `Kooperationsanfrage: ${company}`,
+      company: company.trim(),
+      email: email.trim(),
+      service: field.trim() || undefined,
+      message: message.trim(),
+    };
+
+    try {
+      await sendInquiryEmail(payload);
+      setSubmitted(true);
+      setCompany('');
+      setEmail('');
+      setField('');
+      setMessage('');
+    } catch {
+      setErrorMailto(buildMailtoUrl(payload));
+    } finally {
+      setIsSubmitting(false);
     }
-  ];
+  };
 
   return (
     <div className="pt-28 pb-24 relative z-10 min-h-screen">
@@ -35,11 +59,11 @@ export function ZusammenarbeitPage() {
             className="inline-flex items-center gap-2 text-electric font-bold tracking-widest text-xs uppercase bg-navy-800/90 border border-electric/30 px-5 py-2.5 rounded-full hover:bg-electric hover:text-navy-900 transition-all shadow-[0_0_15px_rgba(0,163,255,0.2)]"
           >
             <ArrowLeft size={18} />
-            <span>Zurück zur Startseite</span>
+            <span>{t.nav.backHome}</span>
           </Link>
 
           <span className="text-xs uppercase tracking-widest text-coolgray hidden sm:inline-block font-mono">
-            B&B CONNECT UG &bull; PARTNERSCHAFTEN
+            {t.cooperationPage.topTag}
           </span>
         </div>
 
@@ -49,13 +73,13 @@ export function ZusammenarbeitPage() {
           
           <div className="max-w-3xl relative z-10">
             <span className="text-electric text-xs font-bold tracking-[0.25em] mb-4 uppercase bg-electric/10 border border-electric/20 px-4 py-2 rounded-full inline-block">
-              UNSERE ZUSAMMENARBEIT & PARTNER
+              {t.cooperationPage.heroBadge}
             </span>
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-offwhite uppercase tracking-tight mt-4 leading-tight">
-              Starke Partnerschaften, <span className="text-electric">Verlässliche Ergebnisse</span>
+              {t.cooperationPage.heroTitlePre} <span className="text-electric">{t.cooperationPage.heroTitleHighlight}</span>
             </h1>
             <p className="text-coolgray text-base md:text-xl font-light mt-6 leading-relaxed">
-              B&B Connect arbeitet eng mit etablierten Branchenführern zusammen. Gemeinsam bündeln wir Kompetenzen, um den Netzausbau in ganz Deutschland zügig und in Spitzenqualität umzusetzen.
+              {t.cooperationPage.heroSubtitle}
             </p>
           </div>
         </div>
@@ -66,27 +90,27 @@ export function ZusammenarbeitPage() {
             <div className="w-14 h-14 rounded-2xl bg-electric/10 border border-electric/30 flex items-center justify-center text-electric mb-4">
               <Calendar size={28} />
             </div>
-            <span className="text-3xl font-extrabold text-offwhite mb-1">&gt; 1 Jahr</span>
-            <span className="text-xs text-electric uppercase font-bold tracking-widest">Täglicher Einsatz</span>
-            <p className="text-xs text-coolgray mt-2 font-light">Ununterbrochene Praxis- & Baustellenerfahrung in Großprojekten.</p>
+            <span className="text-3xl font-extrabold text-offwhite mb-1">{t.cooperationPage.metric1Value}</span>
+            <span className="text-xs text-electric uppercase font-bold tracking-widest">{t.cooperationPage.metric1Title}</span>
+            <p className="text-xs text-coolgray mt-2 font-light">{t.cooperationPage.metric1Desc}</p>
           </div>
 
           <div className="bg-navy-800/80 border border-navy-700 p-8 rounded-3xl flex flex-col items-center text-center shadow-xl">
             <div className="w-14 h-14 rounded-2xl bg-electric/10 border border-electric/30 flex items-center justify-center text-electric mb-4">
               <MapPin size={28} />
             </div>
-            <span className="text-3xl font-extrabold text-offwhite mb-1">Alle Städte</span>
-            <span className="text-xs text-electric uppercase font-bold tracking-widest">Ganz Deutschland</span>
-            <p className="text-xs text-coolgray mt-2 font-light">Einsatzflexibel in allen Bundesländern und Metropolregionen.</p>
+            <span className="text-3xl font-extrabold text-offwhite mb-1">{t.cooperationPage.metric2Value}</span>
+            <span className="text-xs text-electric uppercase font-bold tracking-widest">{t.cooperationPage.metric2Title}</span>
+            <p className="text-xs text-coolgray mt-2 font-light">{t.cooperationPage.metric2Desc}</p>
           </div>
 
           <div className="bg-navy-800/80 border border-navy-700 p-8 rounded-3xl flex flex-col items-center text-center shadow-xl">
             <div className="w-14 h-14 rounded-2xl bg-electric/10 border border-electric/30 flex items-center justify-center text-electric mb-4">
               <Users size={28} />
             </div>
-            <span className="text-3xl font-extrabold text-offwhite mb-1">&gt; 20 Radnika</span>
-            <span className="text-xs text-electric uppercase font-bold tracking-widest">Qualifizierte Fachkräfte</span>
-            <p className="text-xs text-coolgray mt-2 font-light">Erfahrenes Team aus Spleißern, Tiefbauern und Netztechnikern.</p>
+            <span className="text-3xl font-extrabold text-offwhite mb-1">{t.cooperationPage.metric3Value}</span>
+            <span className="text-xs text-electric uppercase font-bold tracking-widest">{t.cooperationPage.metric3Title}</span>
+            <p className="text-xs text-coolgray mt-2 font-light">{t.cooperationPage.metric3Desc}</p>
           </div>
         </div>
 
@@ -94,60 +118,61 @@ export function ZusammenarbeitPage() {
         <div className="mb-20">
           <div className="border-b border-navy-700 pb-4 mb-10">
             <h2 className="text-2xl md:text-3xl font-extrabold text-offwhite uppercase tracking-tight">
-              Aktuelle Hauptpartner
+              {t.cooperationPage.partnersHeading}
             </h2>
             <p className="text-coolgray text-sm font-light mt-1">
-              Unsere Schlüsselpartner, mit denen wir täglich Großprojekte realisieren.
+              {t.cooperationPage.partnersSub}
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
-            {partnerList.map((partner, index) => (
-              <div 
-                key={index}
-                className="bg-navy-800/80 border border-navy-700 rounded-3xl overflow-hidden shadow-2xl hover:border-electric/60 transition-all duration-300 flex flex-col justify-between"
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {t.cooperationPage.partnersList.map((partner) => (
+              <a
+                key={partner.name}
+                href={partner.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-navy-800/80 border border-navy-700 rounded-3xl overflow-hidden shadow-2xl hover:border-electric/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
-                  <div className="h-56 relative overflow-hidden bg-navy-950">
-                    <img 
-                      src={partner.image} 
-                      alt={partner.name} 
-                      className="w-full h-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/40 to-transparent" />
-                    <div className="absolute bottom-4 left-6 right-6">
-                      <span className="bg-electric text-navy-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">
-                        Vertragspartner
-                      </span>
-                      <h3 className="text-3xl font-extrabold text-offwhite">
-                        {partner.name}
-                      </h3>
+                  <div className="p-7 pb-6 bg-gradient-to-br from-navy-900 via-navy-900/90 to-navy-950 border-b border-navy-700/80 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-28 h-28 bg-electric/10 rounded-bl-full pointer-events-none group-hover:bg-electric/20 transition-colors" />
+                    <div className="flex items-center justify-between gap-3 mb-5 relative z-10">
+                      <div className="w-12 h-12 rounded-2xl bg-electric/15 border border-electric/30 flex items-center justify-center text-electric">
+                        <Building2 size={24} />
+                      </div>
+                      <ExternalLink size={18} className="text-electric shrink-0" />
                     </div>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold text-offwhite group-hover:text-electric transition-colors relative z-10">
+                      {partner.name}
+                    </h3>
                   </div>
 
-                  <div className="p-8">
+                  <div className="p-7">
                     <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-3">
                       {partner.role}
                     </h4>
-                    <p className="text-coolgray text-sm md:text-base font-light leading-relaxed mb-6">
+                    <p className="text-coolgray text-sm font-light leading-relaxed mb-6">
                       {partner.desc}
                     </p>
 
                     <div className="flex flex-wrap gap-2">
-                      {partner.tags.map((t, i) => (
+                      {partner.tags.map((tag, i) => (
                         <span key={i} className="bg-navy-900 border border-navy-700 text-xs text-offwhite px-3 py-1 rounded-lg">
-                          ✓ {t}
+                          ✓ {tag}
                         </span>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="p-6 bg-navy-900/60 border-t border-navy-700/80 flex items-center justify-between">
-                  <span className="text-xs text-coolgray font-bold uppercase tracking-wider">Status: Aktiv im Projekt</span>
-                  <CheckCircle size={18} className="text-electric" />
+                <div className="px-7 py-5 bg-navy-900/60 border-t border-navy-700/80 flex items-center justify-between gap-3">
+                  <span className="text-xs text-electric font-bold uppercase tracking-wider group-hover:underline">
+                    {t.cooperationPage.visitWebsite}
+                  </span>
+                  <CheckCircle size={16} className="text-electric shrink-0" />
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -155,33 +180,22 @@ export function ZusammenarbeitPage() {
         {/* Partnership Benefits */}
         <div className="bg-navy-800/60 border border-navy-700 rounded-3xl p-8 md:p-12 mb-20 shadow-xl">
           <h3 className="text-2xl font-bold text-offwhite mb-8 uppercase tracking-tight text-center">
-            Vorteile einer Zusammenarbeit mit B&B Connect
+            {t.cooperationPage.benefitsTitle}
           </h3>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-navy-900/90 border border-navy-700 p-6 rounded-2xl">
-              <ShieldCheck className="text-electric mb-3" size={28} />
-              <h4 className="text-lg font-bold text-offwhite mb-2">Termintreue & Qualität</h4>
-              <p className="text-xs text-coolgray font-light leading-relaxed">
-                Wir halten vertragliche Fristen ein und liefern nach allen geltenden Telekom- und VDE-Standards.
-              </p>
-            </div>
-
-            <div className="bg-navy-900/90 border border-navy-700 p-6 rounded-2xl">
-              <Users className="text-electric mb-3" size={28} />
-              <h4 className="text-lg font-bold text-offwhite mb-2">Skalierbares Team</h4>
-              <p className="text-xs text-coolgray font-light leading-relaxed">
-                Mit über 20 Fachkräften passen wir unsere Kapazitäten flexibel an Ihre Projektgröße an.
-              </p>
-            </div>
-
-            <div className="bg-navy-900/90 border border-navy-700 p-6 rounded-2xl">
-              <Award className="text-electric mb-3" size={28} />
-              <h4 className="text-lg font-bold text-offwhite mb-2">Zertifizierte Messungen</h4>
-              <p className="text-xs text-coolgray font-light leading-relaxed">
-                Lückenlose OTDR-Messprotokolle und transparente Dokumentation aller Spleißpunkte.
-              </p>
-            </div>
+            {t.cooperationPage.benefits.map((b, i) => {
+              const IconComp = benefitIcons[i] || ShieldCheck;
+              return (
+                <div key={b.title} className="bg-navy-900/90 border border-navy-700 p-6 rounded-2xl">
+                  <IconComp className="text-electric mb-3" size={28} />
+                  <h4 className="text-lg font-bold text-offwhite mb-2">{b.title}</h4>
+                  <p className="text-xs text-coolgray font-light leading-relaxed">
+                    {b.desc}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -189,43 +203,109 @@ export function ZusammenarbeitPage() {
         <div className="bg-navy-800/90 border border-navy-700 p-8 md:p-12 rounded-3xl shadow-2xl backdrop-blur-xl">
           <div className="max-w-3xl mx-auto text-center mb-8">
             <span className="text-electric text-xs font-bold uppercase tracking-widest">
-              KOOPERATION ANFRAGEN
+              {t.cooperationPage.formBadge}
             </span>
             <h3 className="text-3xl font-extrabold text-offwhite uppercase mt-2">
-              Werden Sie unser nächster Partner
+              {t.cooperationPage.formHeading}
             </h3>
             <p className="text-coolgray text-sm md:text-base font-light mt-2">
-              Suchen Sie ein zuverlässiges Subunternehmer-Team oder einen Kooperationspartner für den Breitbandausbau? Treten Sie mit uns in Kontakt.
+              {t.cooperationPage.formSubtitle}
             </p>
           </div>
 
-          <form className="max-w-2xl mx-auto space-y-6" onSubmit={(e) => { e.preventDefault(); alert('Vielen Dank für Ihre Partneranfrage!'); }}>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Unternehmensname</label>
-                <input required type="text" placeholder="z. B. Musterbau GmbH" className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric" />
+          {submitted ? (
+            <div className="text-center py-10 flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-electric/20 border border-electric text-electric rounded-full flex items-center justify-center mb-5 shadow-[0_0_25px_rgba(0,163,255,0.4)]">
+                <CheckCircle2 size={34} />
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Ansprechpartner / E-Mail</label>
-                <input required type="email" placeholder="kontakt@firma.de" className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric" />
+              <h4 className="text-2xl font-bold text-offwhite mb-2">{t.cooperationPage.successTitle}</h4>
+              <p className="text-coolgray text-sm md:text-base max-w-md font-light">
+                {t.cooperationPage.successText}
+              </p>
+              <button
+                type="button"
+                onClick={() => setSubmitted(false)}
+                className="mt-6 text-xs font-bold text-electric hover:underline uppercase tracking-wider bg-navy-900 border border-electric/30 px-6 py-3 rounded-full cursor-pointer"
+              >
+                {t.cooperationPage.sendAnother}
+              </button>
+            </div>
+          ) : (
+            <form className="max-w-2xl mx-auto space-y-6" onSubmit={handleSubmit}>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.cooperationPage.labelCompany}</label>
+                  <input
+                    required
+                    type="text"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    placeholder={t.cooperationPage.placeholderCompany}
+                    className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.cooperationPage.labelEmail}</label>
+                  <input
+                    required
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t.cooperationPage.placeholderEmail}
+                    className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Kooperationsfeld</label>
-              <input type="text" placeholder="z. B. Generalunternehmer Tiefbau, Glasfaseranbieter, Spleißpartner" className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric" />
-            </div>
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.cooperationPage.labelField}</label>
+                <input
+                  type="text"
+                  value={field}
+                  onChange={(e) => setField(e.target.value)}
+                  placeholder={t.cooperationPage.placeholderField}
+                  className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">Nachricht</label>
-              <textarea rows={4} required placeholder="Schildern Sie kurz Ihr Vorhaben oder Ihr Projekt..." className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric resize-none"></textarea>
-            </div>
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-coolgray mb-2 font-bold">{t.cooperationPage.labelMessage}</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={t.cooperationPage.placeholderMessage}
+                  className="w-full bg-navy-900 border border-navy-700 text-offwhite px-4 py-3 rounded-xl focus:outline-none focus:border-electric resize-none"
+                ></textarea>
+              </div>
 
-            <button type="submit" className="w-full bg-electric text-navy-900 font-bold uppercase tracking-widest text-xs py-4 rounded-full hover:bg-electric-dim hover:text-offwhite transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,163,255,0.3)]">
-              <span>PARTNERANFRAGE SENDEN</span>
-              <Send size={16} />
-            </button>
-          </form>
+              {errorMailto && (
+                <div className="p-4 rounded-xl bg-navy-900 border border-electric/40 text-xs text-coolgray space-y-2">
+                  <div className="flex items-start gap-2 text-offwhite">
+                    <AlertCircle size={16} className="text-electric shrink-0 mt-0.5" />
+                    <span>{t.cooperationPage.sendError}</span>
+                  </div>
+                  <a
+                    href={errorMailto}
+                    className="inline-flex items-center gap-2 text-electric font-bold underline"
+                  >
+                    <Mail size={14} />
+                    <span>{t.cooperationPage.openEmailApp}</span>
+                  </a>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-electric text-navy-900 font-bold uppercase tracking-widest text-xs py-4 rounded-full hover:bg-electric-dim hover:text-offwhite transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,163,255,0.3)] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <span>{isSubmitting ? t.cooperationPage.sendingBtn : t.cooperationPage.submitBtn}</span>
+                <Send size={16} />
+              </button>
+            </form>
+          )}
         </div>
 
       </div>
