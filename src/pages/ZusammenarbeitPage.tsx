@@ -126,7 +126,7 @@ export function ZusammenarbeitPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {t.cooperationPage.partnersList.map((partner) => (
+            {[...t.cooperationPage.partnersList].sort((a, b) => Number(b.name === 'FSD') - Number(a.name === 'FSD')).map((partner) => (
               <a
                 key={partner.name}
                 href={partner.url}
@@ -149,20 +149,9 @@ export function ZusammenarbeitPage() {
                   </div>
 
                   <div className="p-7">
-                    <h4 className="text-xs uppercase tracking-widest text-electric font-bold mb-3">
-                      {partner.role}
-                    </h4>
-                    <p className="text-coolgray text-sm font-light leading-relaxed mb-6">
+                    <p className="text-coolgray text-sm font-light leading-relaxed">
                       {partner.desc}
                     </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      {partner.tags.map((tag, i) => (
-                        <span key={i} className="bg-navy-900 border border-navy-700 text-xs text-offwhite px-3 py-1 rounded-lg">
-                          ✓ {tag}
-                        </span>
-                      ))}
-                    </div>
                   </div>
                 </div>
 
